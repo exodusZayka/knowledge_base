@@ -1,0 +1,2 @@
+class CannotCreateDBClient(Exception):
+    pass
