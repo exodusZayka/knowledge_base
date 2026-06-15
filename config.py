@@ -45,11 +45,17 @@ class EmbedderConfig(BaseConfig):
     vector_size: int = _embedding_model_dimension_mapper.get(embedding_model)
 
 
+class QdrantConfig(BaseConfig):
+    QDRANT_HOST: str
+    QDRANT_PORT: int
+
+
 class Config(
     GoogleSearchConfig,
     TokenizerConfig,
     ChunkerConfig,
     EmbedderConfig,
+    QdrantConfig,
 ):
     pass
 

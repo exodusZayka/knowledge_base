@@ -1,6 +1,7 @@
 from string import punctuation
 from typing import Any
 
+from loguru import logger
 import ollama
 import tiktoken
 
@@ -16,6 +17,7 @@ class Saver:
     async def save(self, query: str, text: str, metadata: dict[str, Any] | None = None):
         chunked_text: list[str] = self._prepare_text(text)
         embedded_text = [self.__embed_chunk(chunk) for chunk in chunked_text]
+        logger.info('Text was embedded successfully')
 
         await self._repo.save_chunked_data(
             collection_name=self._normalize_query(query),
@@ -42,6 +44,7 @@ class Saver:
             chunk_size=config.chunk_size,
             overlap=config.overlap,
         )
+        logger.info('Scrapped text was tokenized and chunked successfully')
         return chunked_text
 
     @staticmethod

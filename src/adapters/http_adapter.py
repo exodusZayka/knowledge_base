@@ -35,7 +35,13 @@ class HttpAdapter:
                 params=params,
             ) as response:
                 if 200 <= response.status < 300:
-                    return await response.text()
+                    response_text = await response.text()
+                    logger.info(
+                        'Successful http request',
+                        status=response.status,
+                        response=response_text,
+                    )
+                    return response_text
                 else:
                     logger.error(
                         'Error in http response',
@@ -48,5 +54,6 @@ class HttpAdapter:
     def check_for_banned_host(self, url: URL) -> bool:
         for host in self._banned_hosts:
             if host in url:
+                logger.info(f'Url {url} is banned, skip')
                 return True
         return False

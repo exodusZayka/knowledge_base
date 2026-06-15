@@ -3,6 +3,7 @@ from collections import deque
 from typing import Generator
 
 from bs4 import BeautifulSoup
+from loguru import logger
 import validators
 
 from config import config
@@ -22,7 +23,7 @@ class Crawler:
     async def crawl(self, query: str):
         initial_urls = await GoogleSearchAdapter().get_search_links(query)
         links_deque.extendleft(initial_urls)
-
+        logger.info(f'Initial links number: {len(links_deque)}')
         while links_deque and self._processed_links_number <= config.MAX_PROCESSED_LINK_NUMBER:
             urls: Generator[URL] = self._pop_n_links()
             await asyncio.gather(
@@ -54,7 +55,9 @@ class Crawler:
             }
         )
         bs = BeautifulSoup(html, 'html.parser')
-        internal_links: Generator[URL] = await self._find_all_links(bs)
+        internal_links: list[URL] = await self._find_all_links(bs)
+        logger.info(f'Total links: {len(links_deque)}')
+        logger.info(f'Found {len(internal_links)} internal links in url {url}')
         scrapped_data = await self._scrape_html(bs)
         await Saver().save(
             query=query,
@@ -64,13 +67,13 @@ class Crawler:
         links_deque.extendleft(internal_links)
 
     @staticmethod
-    async def _find_all_links(bs: BeautifulSoup) -> Generator[URL]:
+    async def _find_all_links(bs: BeautifulSoup) -> list[URL]:
         link_tags = bs.find_all('a')
-        return (
+        return [
             link.get('href')
             for link in link_tags
             if link.get('href') and bool(validators.url(link.get('href')))
-        )
+        ]
 
     @staticmethod
     async def _scrape_html(bs: BeautifulSoup) -> str:
@@ -81,12 +84,9 @@ class Crawler:
 
     @staticmethod
     def _pop_n_links(n: int = 100) -> Generator[URL]:
+        logger.info(f'Popped {min(n, len(links_deque))} links')
+
         return (
             links_deque.popleft()
             for _ in range(min(n, len(links_deque)))
         )
-
-
-
-if __name__ == '__main__':
-    asyncio.run(Crawler().crawl('What is Python?'))
